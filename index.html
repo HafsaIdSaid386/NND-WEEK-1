@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titanic EDA Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 10px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        .note {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Titanic Dataset Exploratory Data Analysis</h1>
+        
+        <!-- Data Load Section -->
+        <div class="section" id="dataLoad">
+            <h2>1. Data Load</h2>
+            <p>Upload the Titanic dataset files:</p>
+            <label for="trainFile">Training Data (train.csv):</label>
+            <input type="file" id="trainFile" accept=".csv"><br>
+            <label for="testFile">Test Data (test.csv):</label>
+            <input type="file" id="testFile" accept=".csv"><br>
+            <button id="loadDataBtn">Load & Merge Data</button>
+            <div id="loadStatus"></div>
+        </div>
+
+        <!-- Merge & Overview Section -->
+        <div class="section" id="overview" style="display:none;">
+            <h2>2. Merge & Overview</h2>
+            <div id="overviewContent"></div>
+        </div>
+
+        <!-- Missing Values Section -->
+        <div class="section" id="missingValues" style="display:none;">
+            <h2>3. Missing Values</h2>
+            <div id="missingContent"></div>
+        </div>
+
+        <!-- Stats Summary Section -->
+        <div class="section" id="statsSummary" style="display:none;">
+            <h2>4. Stats Summary</h2>
+            <button id="runStatsBtn">Generate Statistics</button>
+            <div id="statsContent"></div>
+        </div>
+
+        <!-- Visualizations Section -->
+        <div class="section" id="visualizations" style="display:none;">
+            <h2>5. Visualizations</h2>
+            <button id="runVizBtn">Generate Visualizations</button>
+            <div id="vizContent"></div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="section" id="export" style="display:none;">
+            <h2>6. Export</h2>
+            <button id="exportCsvBtn">Export Merged CSV</button>
+            <button id="exportJsonBtn">Export JSON Summary</button>
+            <div id="exportStatus"></div>
+        </div>
+
+        <!-- Deployment Note -->
+        <div class="note">
+            <h3>Deployment Instructions:</h3>
+            <p>1. Create a public GitHub repository</p>
+            <p>2. Commit index.html and app.js files</p>
+            <p>3. Enable GitHub Pages (Settings > Pages > Source: main branch / root)</p>
+            <p>4. Test your app at: https://[your-username].github.io/[repo-name]/</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
