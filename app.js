@@ -9,6 +9,7 @@ class TitanicEDA {
         this.mergedData = null;
         this.trainData = null;
         this.testData = null;
+        this.charts = {}; // Store chart instances
         this.initEventListeners();
     }
 
@@ -146,6 +147,7 @@ class TitanicEDA {
     // Calculate and display missing values
     generateMissingValues() {
         const missingContent = document.getElementById('missingContent');
+        missingContent.innerHTML = ''; // Clear previous content
         
         const headers = Object.keys(this.mergedData[0]);
         const missingCounts = {};
@@ -167,8 +169,13 @@ class TitanicEDA {
         canvas.className = 'chart-container';
         missingContent.appendChild(canvas);
         
+        // Destroy existing chart if it exists
+        if (this.charts.missingChart) {
+            this.charts.missingChart.destroy();
+        }
+        
         const ctx = canvas.getContext('2d');
-        new Chart(ctx, {
+        this.charts.missingChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: headers,
@@ -335,30 +342,87 @@ class TitanicEDA {
         const vizContent = document.getElementById('vizContent');
         vizContent.innerHTML = '<h3>📈 Data Visualizations</h3>';
         
-        // Bar chart for Sex distribution
-        this.createBarChart('Sex Distribution', 'sexChart', 'Sex', vizContent);
+        // Clear existing charts
+        Object.values(this.charts).forEach(chart => {
+            if (chart && typeof chart.destroy === 'function') {
+                chart.destroy();
+            }
+        });
+        this.charts = {};
         
-        // Bar chart for Pclass distribution
-        this.createBarChart('Passenger Class Distribution', 'pclassChart', 'Pclass', vizContent);
-        
-        // Bar chart for Embarked distribution
-        this.createBarChart('Embarkation Port Distribution', 'embarkedChart', 'Embarked', vizContent);
-        
-        // Histogram for Age
-        this.createHistogram('Age Distribution', 'ageChart', 'Age', vizContent);
-        
-        // Histogram for Fare
-        this.createHistogram('Fare Distribution', 'fareChart', 'Fare', vizContent);
-        
-        // Survival by Pclass (if train data available)
+        // Create a grid layout for charts
+        vizContent.innerHTML += `
+            <div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px;">
+                <div class="chart-item">
+                    <h4>Sex Distribution</h4>
+                    <div class="chart-container">
+                        <canvas id="sexChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-item">
+                    <h4>Passenger Class Distribution</h4>
+                    <div class="chart-container">
+                        <canvas id="pclassChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-item">
+                    <h4>Embarkation Port Distribution</h4>
+                    <div class="chart-container">
+                        <canvas id="embarkedChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-item">
+                    <h4>Age Distribution</h4>
+                    <div class="chart-container">
+                        <canvas id="ageChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-item">
+                    <h4>Fare Distribution</h4>
+                    <div class="chart-container">
+                        <canvas id="fareChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add survival charts if train data is available
         if (this.trainData && this.trainData[0].Survived !== undefined) {
-            this.createSurvivalChart('Survival by Passenger Class', 'survivalPclassChart', 'Pclass', vizContent);
-            this.createSurvivalChart('Survival by Sex', 'survivalSexChart', 'Sex', vizContent);
+            vizContent.innerHTML += `
+                <div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; margin-top: 30px;">
+                    <div class="chart-item">
+                        <h4>Survival by Passenger Class</h4>
+                        <div class="chart-container">
+                            <canvas id="survivalPclassChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-item">
+                        <h4>Survival by Sex</h4>
+                        <div class="chart-container">
+                            <canvas id="survivalSexChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
+
+        // Generate charts after a small delay to ensure DOM is updated
+        setTimeout(() => {
+            this.createBarChart('Sex Distribution', 'sexChart', 'Sex');
+            this.createBarChart('Passenger Class Distribution', 'pclassChart', 'Pclass');
+            this.createBarChart('Embarkation Port Distribution', 'embarkedChart', 'Embarked');
+            this.createHistogram('Age Distribution', 'ageChart', 'Age');
+            this.createHistogram('Fare Distribution', 'fareChart', 'Fare');
+            
+            if (this.trainData && this.trainData[0].Survived !== undefined) {
+                this.createSurvivalChart('Survival by Passenger Class', 'survivalPclassChart', 'Pclass');
+                this.createSurvivalChart('Survival by Sex', 'survivalSexChart', 'Sex');
+            }
+        }, 100);
     }
 
     // Helper method to create bar charts
-    createBarChart(title, canvasId, column, container) {
+    createBarChart(title, canvasId, column) {
         const counts = {};
         this.mergedData.forEach(row => {
             if (row[column] !== null && row[column] !== undefined && row[column] !== '') {
@@ -366,13 +430,20 @@ class TitanicEDA {
             }
         });
         
-        const canvas = document.createElement('canvas');
-        canvas.id = canvasId;
-        canvas.className = 'chart-container';
-        container.appendChild(canvas);
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) {
+            console.error(`Canvas element with id ${canvasId} not found`);
+            return;
+        }
         
         const ctx = canvas.getContext('2d');
-        new Chart(ctx, {
+        
+        // Destroy existing chart if it exists
+        if (this.charts[canvasId]) {
+            this.charts[canvasId].destroy();
+        }
+        
+        this.charts[canvasId] = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: Object.keys(counts),
@@ -398,11 +469,12 @@ class TitanicEDA {
     }
 
     // Helper method to create histograms
-    createHistogram(title, canvasId, column, container) {
+    createHistogram(title, canvasId, column) {
         const values = this.mergedData.map(row => row[column]).filter(val => val !== null && val !== undefined && !isNaN(val));
         
         if (values.length === 0) {
-            container.innerHTML += `<p>No data available for ${column}</p>`;
+            const container = document.getElementById(canvasId).parentElement;
+            container.innerHTML = `<p>No data available for ${column}</p>`;
             return;
         }
         
@@ -422,13 +494,20 @@ class TitanicEDA {
             (min + i * binSize).toFixed(1) + '-' + (min + (i+1) * binSize).toFixed(1)
         );
         
-        const canvas = document.createElement('canvas');
-        canvas.id = canvasId;
-        canvas.className = 'chart-container';
-        container.appendChild(canvas);
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) {
+            console.error(`Canvas element with id ${canvasId} not found`);
+            return;
+        }
         
         const ctx = canvas.getContext('2d');
-        new Chart(ctx, {
+        
+        // Destroy existing chart if it exists
+        if (this.charts[canvasId]) {
+            this.charts[canvasId].destroy();
+        }
+        
+        this.charts[canvasId] = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: binLabels,
@@ -468,7 +547,7 @@ class TitanicEDA {
     }
 
     // Helper method to create survival charts
-    createSurvivalChart(title, canvasId, column, container) {
+    createSurvivalChart(title, canvasId, column) {
         const categories = [...new Set(this.trainData.map(row => row[column]).filter(val => val !== undefined && val !== ''))];
         const survivedData = [];
         const notSurvivedData = [];
@@ -479,13 +558,20 @@ class TitanicEDA {
             notSurvivedData.push(categoryData.filter(row => row.Survived === 0).length);
         });
         
-        const canvas = document.createElement('canvas');
-        canvas.id = canvasId;
-        canvas.className = 'chart-container';
-        container.appendChild(canvas);
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) {
+            console.error(`Canvas element with id ${canvasId} not found`);
+            return;
+        }
         
         const ctx = canvas.getContext('2d');
-        new Chart(ctx, {
+        
+        // Destroy existing chart if it exists
+        if (this.charts[canvasId]) {
+            this.charts[canvasId].destroy();
+        }
+        
+        this.charts[canvasId] = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: categories,
